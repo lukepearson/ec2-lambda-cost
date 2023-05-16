@@ -1,0 +1,44 @@
+{
+  "name": "chart",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "preview": "vite preview",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "**/*": "prettier --write --ignore-unknown"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.9.3",
+    "@mantine/core": "5.1.0",
+    "@mantine/hooks": "5.1.0",
+    "@react-spring/web": "^9.5.4",
+    "@tabler/icons-react": "^2.18.0",
+    "chart.js": "^4.3.0",
+    "chartjs": "^0.3.24",
+    "faker": "^6.6.6",
+    "prettier": "^2.8.8",
+    "react": "^18.2.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.28",
+    "@types/react-dom": "^18.0.11",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "@vitejs/plugin-react-swc": "^3.0.0",
+    "eslint": "^8.38.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.3.4",
+    "husky": "^8.0.3",
+    "lint-staged": "^13.2.2",
+    "typescript": "^5.0.2",
+    "vite": "^4.3.2"
+  }
+}

@@ -1,0 +1,24 @@
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+
+.card {
+  padding: 2em;
+}
+
+select {
+  font-size: 1em;
+  padding: 0.5em;
+  margin: 0.5em;
+  border-radius: 0.5em;
+}
+
+.theme-icon {
+  width: 1em;
+  height: 1em;
+  margin: 0 0.5em;
+  vertical-align: right;
+}
