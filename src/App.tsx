@@ -17,7 +17,9 @@ import { Input, MantineProvider, Slider, Stack, Table, Grid, Autocomplete, Card,
 import { MantineThemeOverride } from "@mantine/core";
 import { ec2InstanceTypes } from './EC2Costs';
 import { IconMoon, IconSun } from '@tabler/icons-react';
-import { useColorScheme, useHotkeys, useLocalStorage } from '@mantine/hooks';
+import { useColorScheme, useDebouncedValue, useHotkeys, useLocalStorage } from '@mantine/hooks';
+import { NumberParam, StringParam, useQueryParams, withDefault } from 'use-query-params';
+import { useState } from 'react';
 
 const KILO = 1024;
 const HOURS_PER_DAY = 24;
@@ -43,9 +45,6 @@ ChartJS.register(
 
 const options: ChartOptions = {
   responsive: true,
-  onResize: () => {
-    console.log('resize')
-  },
   plugins: {
     legend: {
       position: 'top' as const,
@@ -57,7 +56,7 @@ const options: ChartOptions = {
   },
 };
 
-const entries = new Set(Object.entries(ec2InstanceTypes).map(([key, _]) => {
+const entries = new Set(Object.entries(ec2InstanceTypes).map(([key]) => {
   return key.split('.')[0];
 }).sort((a: string, b: string) => a.localeCompare(b)));
 
@@ -66,22 +65,45 @@ function App() {
   const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
     key: 'mantine-color-scheme',
     defaultValue: preferredColorScheme,
-    getInitialValueInEffect: true,
+    getInitialValueInEffect: false,
   });
-  const [filter, setFilter] = useLocalStorage({ key: 'filter', defaultValue: 't2' });
-  const [memorySizeMb, setMemorySizeMb] = useLocalStorage({ key: 'memorySizeMb', defaultValue: 128 });
-  const [computeTimeMs, setComputeTimeMs] = useLocalStorage({ key: 'computeTimeMs', defaultValue: 200 });
-  const [storageMb, setStorageMb] = useLocalStorage({ key: 'storageMb', defaultValue: 512 });
-  const [numInstances, setNumInstances] = useLocalStorage({ key: 'numInstances', defaultValue: 1 });
+  
+  const FilterParam = withDefault(StringParam, 't2');
+  const MemorySizeMbParam = withDefault(NumberParam, 128);
+  const ComputeTimeMsParam = withDefault(NumberParam, 200);
+  const StorageMb = withDefault(NumberParam, 512);
+  const NumInstancesParam = withDefault(NumberParam, 1);
 
-  console.log(colorScheme);
+  const [query, setQuery] = useQueryParams({
+    filter: FilterParam,
+    memorySizeMb: MemorySizeMbParam,
+    computeTimeMs: ComputeTimeMsParam,
+    storageMb: StorageMb,
+    numInstances: NumInstancesParam,
+  });
+
+  const [filter, setFilter] = useState( query.filter);
+  const [memorySizeMb, setMemorySizeMb] = useState(query.memorySizeMb);
+  const [computeTimeMs, setComputeTimeMs] = useState(query.computeTimeMs);
+  const [storageMb, setStorageMb] = useState(query.storageMb);
+  const [numInstances, setNumInstances] = useState(query.numInstances);
+
+  useDebouncedValue(() => {
+    setQuery({
+      filter,
+      memorySizeMb,
+      computeTimeMs,
+      storageMb,
+      numInstances,
+    });
+  }, 200);
 
   const toggleColorScheme = (value?: ColorScheme) =>
     setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'));
 
   useHotkeys([['mod+J', () => toggleColorScheme()]]);
 
-  const filteredEc2InstanceTypes = Object.entries(ec2InstanceTypes).filter(([key, _]) => {
+  const filteredEc2InstanceTypes = Object.entries(ec2InstanceTypes).filter(([key]) => {
     try {
       const regex = new RegExp(filter, 'i');
       return regex.test(key)
@@ -94,10 +116,8 @@ function App() {
     setFilter(value);
   }
 
-  const maxCost = Math.max(...filteredEc2InstanceTypes.map(([_, value]) => Number(value)));
+  const maxCost = Math.max(...filteredEc2InstanceTypes.map(([, value]) => Number(value)));
   const maxDailyCost = maxCost * HOURS_PER_DAY * numInstances;
-
-  console.log(maxCost, maxDailyCost)
 
   const { invocations } = calculateLambdaInvocations({
     totalCost: maxDailyCost,
@@ -109,8 +129,6 @@ function App() {
   const numSteps = Math.max(1, Math.min(10, invocations));
   const stepSize = Math.max(invocations, 0) / numSteps;
   const labels = Array.from(Array(numSteps + 1).keys()).map((_, index) => Math.round(index * stepSize));
-  console.log(invocations, stepSize);
-  console.log(labels)
   const datasets = filteredEc2InstanceTypes.map(([key, value]) => ({
     label: key,
     data: labels.map(() => Number(value) * HOURS_PER_DAY * numInstances),
@@ -172,6 +190,8 @@ function App() {
     return `${value / 1000} s`;
   }
 
+  console.log('colorScheme', colorScheme);
+
   return (
     <MantineProvider theme={colorScheme === 'light' ? lightTheme : theme} withGlobalStyles withNormalizeCSS>
       <ThemeIcon 
@@ -182,7 +202,7 @@ function App() {
       </ThemeIcon>
       <Grid grow>
 
-        
+
       <Grid.Col lg={12}>
         <Stack p="xl">
           <h1>EC2 vs Lambda cost calculator</h1>
@@ -192,7 +212,6 @@ function App() {
           </Card>
         </Stack>
       </Grid.Col>
-
 
 
       <Grid.Col lg={6}>
@@ -264,7 +283,6 @@ function App() {
         </Grid.Col>
 
         {filteredEc2InstanceTypes.length > 0 ? (
-          <>
           <Grid.Col lg={8}>
             <Table>
               <thead>
@@ -286,7 +304,7 @@ function App() {
                     ephemeralStorageGB: storageMb / KILO,
                   });
                   return (
-                    <tr>
+                    <tr key={key}>
                       <td>{key}</td>
                       <td>${cost.toLocaleString()}</td>
                       <td>${((Number(cost) * 365) / 12).toLocaleString()}</td>
@@ -297,7 +315,6 @@ function App() {
               </tbody>
             </Table>
           </Grid.Col>
-        </>
         ) : (
           <Grid.Col lg={8}>
             <h3>No results</h3>
