@@ -10,7 +10,10 @@ import {
   Legend,
   ChartOptions,
   ChartData,
+  LinearScaleOptions,
+  ChartType,
 } from 'chart.js';
+import { DeepPartial } from 'utility-types';
 import { Line } from 'react-chartjs-2';
 import { calculateLambdaCost, calculateLambdaInvocations } from './Calculator';
 import { Input, MantineProvider, Slider, Stack, Table, Grid, Autocomplete, Card, ThemeIcon, ColorScheme } from '@mantine/core';
@@ -43,25 +46,33 @@ ChartJS.register(
   Legend
 );
 
-const options: ChartOptions = {
+const chartType: ChartType = 'line';
+
+const yOptions: DeepPartial<LinearScaleOptions> = {
+  title: {
+    display: true,
+    text: 'Cost per day',
+    align: 'center',
+  },
+  ticks: {
+      callback: (value) => {
+        return Number(value).toLocaleString('en-US', {style: 'currency', currency: 'USD'})
+      }
+  }
+}
+const xOptions: DeepPartial<LinearScaleOptions> = {
+  title: {
+    display: true,
+    text: 'Lambda invocations per day',
+  },
+  axis: 'x'
+}
+
+const options: ChartOptions<typeof chartType> = {
   responsive: true,
   scales: {
-      y: {
-        title: {
-          display: true,
-          text: 'Cost per day',
-        },
-        ticks: {
-            callback: (value) => 
-              Number(value).toLocaleString('en-US', {style: 'currency', currency: 'USD'})
-        }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Lambda invocations per day',
-        },
-      }
+      y: yOptions,
+      x: xOptions
   },
   plugins: {
     legend: {
@@ -167,7 +178,7 @@ function App() {
     backgroundColor: 'rgba(99, 255, 132, 0.5)',
   });
 
-  const data: ChartData<'line'> = { labels, datasets };
+  const data: ChartData<'line'> = { labels: labels.map(n => Number(n).toLocaleString()), datasets };
 
   const marks = [
     { value: 128 },
@@ -220,7 +231,7 @@ function App() {
 
       <Grid.Col lg={12}>
         <Stack p="xl">
-          <h1>EC2 vs Lambda cost calculator</h1>
+          <h1>EC2 vs Lambda cost comparison</h1>
           <Card>
             <p>Find out how many lambda invocations you could need before an EC2 instance becomes more cost-effective.</p>
           </Card>
@@ -342,8 +353,6 @@ function App() {
       </Grid.Col>
 
       </Grid>
-
-      
 
       <div className="chart-container" style={{ position: 'relative', height:'100vh', maxWidth: '1280px', width:'90vw' }}>
         <Line data={data} options={options} />
