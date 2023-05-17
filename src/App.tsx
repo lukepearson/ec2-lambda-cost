@@ -45,13 +45,30 @@ ChartJS.register(
 
 const options: ChartOptions = {
   responsive: true,
+  scales: {
+      y: {
+        title: {
+          display: true,
+          text: 'Cost per day',
+        },
+        ticks: {
+            callback: (value) => 
+              Number(value).toLocaleString('en-US', {style: 'currency', currency: 'USD'})
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Lambda invocations per day',
+        },
+      }
+  },
   plugins: {
     legend: {
       position: 'top' as const,
     },
     title: {
       display: true,
-      text: 'EC2 vs Lambda Cost per day (USD)',
     },
   },
 };
@@ -190,8 +207,6 @@ function App() {
     return `${value / 1000} s`;
   }
 
-  console.log('colorScheme', colorScheme);
-
   return (
     <MantineProvider theme={colorScheme === 'light' ? lightTheme : theme} withGlobalStyles withNormalizeCSS>
       <ThemeIcon 
@@ -207,8 +222,7 @@ function App() {
         <Stack p="xl">
           <h1>EC2 vs Lambda cost calculator</h1>
           <Card>
-            <p>Compare cost effectiveness between lambda and EC2 based on resource requirements.</p>
-            <p>The table and graph below show how many lambda invocations would be needed before lambda becomes less efficient than EC2</p>
+            <p>Find out how many lambda invocations you could need before an EC2 instance becomes more cost-effective.</p>
           </Card>
         </Stack>
       </Grid.Col>
@@ -321,7 +335,15 @@ function App() {
           </Grid.Col>
         )}
 
+      <Grid.Col lg={8}>
+      <Card>
+        <p>The graph below shows EC2 instance cost per day vs lambda invocations using the settings provided.</p>
+      </Card>
+      </Grid.Col>
+
       </Grid>
+
+      
 
       <div className="chart-container" style={{ position: 'relative', height:'100vh', maxWidth: '1280px', width:'90vw' }}>
         <Line data={data} options={options} />
