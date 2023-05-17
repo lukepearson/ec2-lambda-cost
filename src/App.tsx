@@ -354,9 +354,11 @@ function App() {
 
       </Grid>
 
-      <div className="chart-container" style={{ position: 'relative', height:'100vh', maxWidth: '1280px', width:'90vw' }}>
-        <Line data={data} options={options} />
-      </div>
+      <Card>
+        <div className="chart-container" style={{ position: 'relative', height:'100vh', maxWidth: '1200px', width:'90vw' }}>
+          <Line data={data} options={options} />
+        </div>
+      </Card>
     </MantineProvider>
   )
 }
